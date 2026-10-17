@@ -1,7 +1,7 @@
 # ADAPA360 Research Module Briefs — Living White-Paper Notes
 
 **Research status:** source-reviewed proof-of-concept modules; no independent production validation  
-**Version:** 0.1 — 17 October 2026  
+**Version:** 0.2 — 17 October 2026  
 **Repository:** [ADAPA360/Tensorized-Blockchain](https://github.com/ADAPA360/Tensorized-Blockchain/tree/initial-stack-upload)  
 **Source reference:** default branch `initial-stack-upload`; verify the actual commit and blob SHA before executing or reproducing experiments.  
 **Scope:** This document grows **one reviewed module at a time** in the order chosen by the project lead. It is a compact repository companion to the eventual scientific white paper, **not** a replacement for the underlying code or a claim of scientific priority. Original source modules remain unchanged.
@@ -26,11 +26,11 @@ ADAPA360's research programme is organized around **three interconnected but dis
 
 **Dependencies / standalone use.** Requires Python and NumPy; SciPy is optional for CPU decompositions and CuPy for non-consensus GPU work. It is intended to run independently of the ledger and lobes. A built-in smoke/self-test entry point exists: `python tn.py` (not independently verified as passing during this documentation pass).
 
-**Connections.** `ncp.py` can use TT recurrent weights; `cfc.py` can use a TT cell backbone; `digital_twin_kernel.py` uses tensor operators/fusion; `tensorized_blockchain_kernel.py` and `tb_tensor_commitments.py` consume tensor representations and their commitments. Higher layers should own governance, ledger execution, security and tool routing.
+**Connections.** `ncp.py` can use TT recurrent weights; `cfc.py` can use a TT cell backbone. **Confirmed static call site:** `digital_twin_kernel.py` creates `tn.TuckerFusionLayer` through `_TuckerFusionAdapter` in `FusionMode.TN_TUCKER` and configures that option at twin-tree node `4.1.4` in its platform builder (availability-conditional). This is already a functional *integration path in source*, but **not** the specialized four-input `TreeTensorFusion` class, for which no external construction call was found in the scanned modules. `tensorized_blockchain_kernel.py` and `tb_tensor_commitments.py` also consume tensor representations and their commitments. Higher layers should own governance, ledger execution, security and tool routing.
 
 **Research differentiation.** The proposed contribution extends beyond operator compression: `TreeTensorFusion` (near line 1478 of the current source) encodes an **experimental two-level cognitive integration topology**, combining `memory`, `sensory`, and `tcfc_pred` through a first `TuckerFusionLayer`, then fusing that result with `vlm_strategy` at a root layer. `TuckerFusionLayer.train` includes a local gradient update, so fusion is not strictly inference-only. This is a fixed tree of factor-projection/Hadamard fusion layers, **not** a general hierarchical Tucker decomposition with arbitrary dimension trees or hierarchical-SVD rank truncation. Its architectural intent needs to be traced in other modules and must not be lost in a TT-focused assessment. TT and hierarchical fusion have earlier scientific precedents, so originality of this particular topology remains to be established.
 
-**Boundaries / next experiments.** Structure determines TT efficiency: random dense operators may not compress or execute faster. Core-byte commitments verify specific stored representations, not necessarily mathematically equivalent tensors in different gauges. Measure matched dense/TT accuracy, total memory, setup and inference latency on structured and unstructured cases; investigate clear representation-versus-operator identity semantics. **No measured in-chat capability gain is yet attributable to a deployed `tn.py` tool.**
+**Boundaries / next experiments.** `TuckerFusionLayer.train` performs local weight updates; its input-gradient calculation uses a factor matrix after in-place modification, which should be checked against finite-difference gradients before broader backpropagation. `digital_twin_kernel.py` additionally exposes `learn_fusion_bias`, a separate scalar feedback update, but these are not evidence of an integrated NCP/CfC online-learning loop. Structure determines TT efficiency: random dense operators may not compress or execute faster. Core-byte commitments verify specific stored representations, not necessarily mathematically equivalent tensors in different gauges. Measure matched dense/TT accuracy, total memory, setup and inference latency on structured and unstructured cases; investigate clear representation-versus-operator identity semantics. **No measured in-chat capability gain is yet attributable to a deployed `tn.py` tool.**
 
 **Primary source:** [`tn.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tn.py).
 
@@ -90,6 +90,57 @@ The project proposes a layered tensor-based systems architecture. Its **possible
 
 **Primary source:** [`cognitive_lobe_runtime.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/cognitive_lobe_runtime.py).
 
+
+## 5. `lobe_scaler.py` — Risk-responsive cognitive resource policy
+
+**Purpose and placement.** A *capacity-policy planner* across the liquid-network and governance pillars. It takes risk/drift/saturation/forecast-error signals, requested operating mode and a resource envelope, then recommends NCP/CfC budget and frequency profiles. Available modes are `dormant`, `reflex`, `operational`, `crisis`, and `deep_cognition`.
+
+**Implemented mechanism.** `LobeScaler.select_mode` maps thresholds to a target mode; `_fit_profiles_to_resource_envelope` contracts proposed budgets when resources are insufficient; `decide` creates hashed `LobeScaleEvent` records, a decision and an event root. NCP drift and saturation, and CfC forecast error, can independently elevate the target to crisis mode. Checkpoint-hash requirements can disallow certain contractions/dormancy decisions.
+
+**Standalone and dependencies.** Source exposes `build_default_scaler`, `recommend_profiles`, CLI and `_self_test`. Low-level decision logic is Python and standard-library based with optional shared schema/hash/config interfaces. This module **does not allocate, train, resize, or deploy an NCP/CfC instance**: its parameter counts are targets/budgets. Any real adaptive scaling needs a separate actuator, measured allocation and safe state migration.
+
+**Novelty and applications.** Combining risk-aware capacity planning with verifiable events, separately for reflex and predictive lobes, could be useful in bandwidth-/power-constrained systems and emergency operations. Risk thresholds and nominal multi-billion parameter budgets are design values, not demonstrated performance, actual model size, or field reliability.
+
+**Open checks.** Verify whether any running orchestrator consumes scale decisions; distinguish desired from allocated parameters; test mode hysteresis and convergence under resource pressure, checkpoint persistence on contraction, and the consistency of per-event approval fields if approval changes during a multi-lobe decision. Source review only; no independent execution results.
+
+**Primary source:** [`lobe_scaler.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/lobe_scaler.py).
+
+## 6. `digital_twin_kernel.py` — Governed hierarchical world-state engine
+
+**Purpose and placement.** The core digital-twin model. `TreeTensorNetwork` maintains a hierarchical node topology, latent numeric state, aggregations, sketches, baselines, causal/temporal probes, snapshots, and Merkle-backed state commitments. `AkkuratInterface` and `PolicyEngine` manage simulated and allowed actions; blockchain append/validator consensus remain in separate modules.
+
+**Fusion, with an important correction.** In `_fuse_children`, the `TN_TUCKER` mode uses `_TuckerFusionAdapter`, which instantiates a two-input `tn.TuckerFusionLayer` when available. The platform builder configures this mode for node `4.1.4`; an alternative `TUCKER` mode is used when `tn.py` is unavailable. Other modes include averaging and attention. This confirms an **existing configurable tensor-fusion handoff**, but not invocation of `TreeTensorFusion`'s memory/sensory/CfC/strategy path. `learn_fusion_bias` separately adjusts attention/fusion bias in response to an explicit reward.
+
+**Execution and audit.** `state_commitment()` captures state, topology, metadata, node-state and projector hashes. `governed_actions` filters proposed actions, simulates permitted actions, asks policy approval and generates policy/action receipts. `sandbox_clone` and `deep_clone_for_replay` support pre-action simulation and replay experiments. These are source-observed mechanisms, not evidence of field-safe autonomous actuation.
+
+**Standalone use.** NumPy and Python are required; `tn.py` is optional for certain tensor modes, with fallback. A `_self_test` is present and `python digital_twin_kernel.py` invokes it; that test has not been independently reproduced in this review.
+
+**Novelty and next steps.** The research proposition is linking hierarchical tensor fusion, governed state simulation and inspectable commitments, not inventing digital twins, Tucker fusion or Merkle trees. Prioritize testing deterministic replay and state-root equality, visibility of fusion fallback, training-vs-inference separation, and full policy simulation against negative actions. For fire and rescue, proposed uses include a simulated robot, sensor or incident twin with humans retaining operational authority.
+
+**Primary source:** [`digital_twin_kernel.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/digital_twin_kernel.py).
+
+## 7. `twin_anything.py` — Domain-agnostic digital twin factory
+
+**Purpose and placement.** A typed construction bridge making digital twins of objects, equipment, processes, plans, software, organizations and other defined entities. `TwinAnythingFactory.create_twin_runtime` produces a `digital_twin_kernel.TreeTensorNetwork`, `AkkuratInterface`, schema, node map, metadata, source-file manifests and a creation receipt. `create_twin_snapshot` returns a serializable representation; a legacy `create_twin` interface also exists.
+
+**Evidence and integrity.** The factory materializes a universal branch, applies type-specific structure, records inputs, source-manifest roots and pre/post commitments, performs topology validation, and emits a `TwinCreationReceipt`. `TensorNetworkProfileBuilder` inspects optional `tn.py` capabilities; it does not demonstrate that all materialized twins contain learned or accurate physical dynamics.
+
+**Standalone and dependencies.** Python/NumPy and `digital_twin_kernel.py` are needed for actual twin creation; `tn.py` integration is optional and diagnostic/configuration-sensitive. The factory is separately callable from the ledger, while the full governance and transaction life cycle requires additional stack modules.
+
+**Novelty and next steps.** Universal schema-based twin construction with deterministic receipts could be valuable as an adaptation layer for multiple sectors, including emergency services, health logistics, autonomous robotics and transport. This is a platform hypothesis, not evidence that every domain is adequately modeled. Check typed-observable fidelity, source-manifest trust, type-registry coverage, failure handling, serialization invariants and the status of `run_smoke_tests` paths.
+
+**Primary source:** [`twin_anything.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/twin_anything.py).
+
+## Complete-source AST audit — verified 17 October 2026
+
+A GitHub Actions check on research commit `6e52251fdc5ced99560b07a24a69cb983f542194` ran Python **3.12.3 `ast.parse` on 28/28 Python files**, including all 27 active core files and separately classified `app.py`: **zero parse failures**, approximately **37,433 source lines and 270,167 AST nodes**. The check records per-file source SHA-256, classes, top-level functions, local imports, static call sites and AST-node counts. [Audit run and retained artifact](https://github.com/ADAPA360/Tensorized-Blockchain/actions/runs/39018305393). AST success proves syntax parsing only; no imports, self-tests, benchmarks or operational interactions were executed.
+
+**Static-analysis limitation:** `digital_twin_kernel.py`, `twin_anything.py` and `tb_api.py` use dynamic module loading and/or path bootstrapping, so simple `Import`/`ImportFrom` graphs undercount runtime dependencies; the above findings supplement AST with source-level call tracing.
+
+**Cross-stack interoperability candidate requiring tests:** `tb_hashing.domain_hash_hex(payload, *, domain=...)` requires a keyword-only domain, while some callers, including `tb_execution._object_hash` and `tb_api.hsh`, pass two positional arguments, catch the resulting exception and fall back to a locally different hash formulation. This can undermine cross-module canonical-hash consistency. Do **not** replace cryptographic formatting without a compatibility/migration design and golden-vector tests.
+
+**Review status:** Seven module briefs now exist; the remaining scripts have completed syntax/structural inventory but have **not** each received a source-semantic or execution-level audit. Record exact evidence before assigning implementation, safety or scientific-priority claims.
+
 ## Cross-module architectural questions retained for full-stack review
 
 - Does any runtime instantiate or invoke `TreeTensorFusion`? Identify the actual call paths rather than infer them from comments or class names.
@@ -98,5 +149,5 @@ The project proposes a layered tensor-based systems architecture. Its **possible
 - Are serialized state and tensor commitments checked in a single verifiable, canonical way end-to-end, including on restore?
 - Where should explicit lobe exchange and hierarchical sensor/memory/strategy fusion take place without bypassing governance?
 
-**Analysis technique:** repeat the **full-stack structural and Python-AST scan** with this architecture-first lens. A source/keyword inventory does not count as a successful `ast.parse` check. See the adoption protocol for what evidence is required before reporting AST or execution checks as passing.
+**Analysis technique:** the full-stack Python-AST parse is now verified (audit run linked above). Continue architecture-aware semantic and runtime reviews, explicitly separating AST success from successful execution.
 
