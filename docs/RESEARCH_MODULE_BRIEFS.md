@@ -131,6 +131,21 @@ The project proposes a layered tensor-based systems architecture. Its **possible
 
 **Primary source:** [`twin_anything.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/twin_anything.py).
 
+
+## 8. `tensorized_blockchain_kernel.py` — Cryptographic ledger with compiled tensor representations
+
+**Purpose and role.** A canonical local block ledger for governed digital-twin transitions. `TensorTransaction`, `TensorBlock`, `TransitionReceipt`, Merkle proofs, signatures, replay/sequence guards and `LedgerMPS` form its central interfaces. `GovernedLedgerExecutor` routes candidate actions through `digital_twin_kernel.AkkuratInterface`. `twin_anything.py` is an optional source of materialized twins; `tn.py` and `digital_twin_kernel.py` are required to import the kernel.
+
+**Precisely what is tensorized.** `LedgerMPS._derive_core` hashes canonical per-block transition context into a deterministic numeric vector, reshapes it into an operator-sized matrix, and combines it with seeded bond weights to construct one MPO/TT core per block. `get_tensor_train` assembles the cores; `compress_ledger` requests TT rounding and records a compression report. The **cryptographic block chain remains canonical**. The tensor train is a reproducible, hash-committed derived representation, not the sole ledger source of truth, and a hashed context vector is not automatically a learned representation of physical dynamics.
+
+**Security and consensus boundary.** SHA-256/Merkle commitments and Ed25519 signatures provide integrity/authentication primitives, **not encryption or confidentiality** for 6G communications. `LedgerConfig.require_signatures` defaults to false, and `append_block` can insert an empty `ConsensusCertificate` if none is provided; `TensorBlock.validate_static` bypasses the failed-certificate check when `total_votes == 0`. Therefore the current implementation **does not enforce a validator quorum for all appended blocks**. The separate `tb_consensus.py` contains a transition-based quorum engine, but compatibility and actual use require explicit verification. The `production` string in source version labels does not constitute a deployment assurance.
+
+**Standalone operation.** Python, NumPy, `tn.py` and `digital_twin_kernel.py` are required; Ed25519 signing depends on a cryptography backend, and `twin_anything.py` is optional for demo twin materialization. CLI/self-test and an Alicante fire-department robot scenario exist in source, but neither represents independent field validation.
+
+**Research differentiation and risks.** The distinctive integration hypothesis is pairing governed twin transitions and cryptographically verifiable receipts with reproducible TT/MPO compilation. Prior art includes blockchains, Merkle trees, digital twins and tensor networks separately. Before claiming an operational protocol: enforce configurable signature/quorum invariants, compare `tb_consensus` and this module's competing certificate schemas, build golden vectors for hash/serialization compatibility, and test tampering, replay, deterministic reconstruction, compression errors and reloading. Keep signed attestation distinct from encryption.
+
+**Primary source:** [`tensorized_blockchain_kernel.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tensorized_blockchain_kernel.py).
+
 ## Complete-source AST audit — verified 17 October 2026
 
 A GitHub Actions check on research commit `6e52251fdc5ced99560b07a24a69cb983f542194` ran Python **3.12.3 `ast.parse` on 28/28 Python files**, including all 27 active core files and separately classified `app.py`: **zero parse failures**, approximately **37,433 source lines and 270,167 AST nodes**. The check records per-file source SHA-256, classes, top-level functions, local imports, static call sites and AST-node counts. [Audit run and retained artifact](https://github.com/ADAPA360/Tensorized-Blockchain/actions/runs/39018305393). AST success proves syntax parsing only; no imports, self-tests, benchmarks or operational interactions were executed.
@@ -139,7 +154,7 @@ A GitHub Actions check on research commit `6e52251fdc5ced99560b07a24a69cb983f542
 
 **Cross-stack interoperability candidate requiring tests:** `tb_hashing.domain_hash_hex(payload, *, domain=...)` requires a keyword-only domain, while some callers, including `tb_execution._object_hash` and `tb_api.hsh`, pass two positional arguments, catch the resulting exception and fall back to a locally different hash formulation. This can undermine cross-module canonical-hash consistency. Do **not** replace cryptographic formatting without a compatibility/migration design and golden-vector tests.
 
-**Review status:** Seven module briefs now exist; the remaining scripts have completed syntax/structural inventory but have **not** each received a source-semantic or execution-level audit. Record exact evidence before assigning implementation, safety or scientific-priority claims.
+**Review status:** Eight module briefs now exist; the remaining scripts have completed syntax/structural inventory but have **not** each received a source-semantic or execution-level audit. Record exact evidence before assigning implementation, safety or scientific-priority claims.
 
 ## Cross-module architectural questions retained for full-stack review
 
