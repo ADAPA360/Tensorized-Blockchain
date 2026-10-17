@@ -4,7 +4,7 @@
 **Date:** 2026-10-17  
 **Scope:** `ADAPA360/Tensorized-Blockchain` and, when explicitly selected, related ADAPA360 module variants  
 **Owner of script sequence:** Human project lead; the assistant does not choose or silently advance to another module  
-**First modules:** `tn.py` (inspected), `ncp.py` (inspected), `cfc.py` (next, per project lead)  
+**Source-reviewed modules:** `tn.py`, `ncp.py`, `cfc.py`, `cognitive_lobe_runtime.py`. **Current review:** architecture-aware full-stack AST inventory (not yet recorded as a passing 27-file parse).  
 **Excluded from active integration:** `app.py`  
 **Purpose:** Measure whether repository components, offered as bounded **external computational tools**, make an LLM-assisted workflow more accurate, useful, reproducible or efficient. This does **not** alter the underlying LLM's weights, training, native memory, internal activations, or permissions.
 
@@ -122,9 +122,17 @@ A module is **SOURCE INSPECTED** after A/B, **EXECUTABLE** after C, **BENCHMARKE
 
 The words **"capability added"** are reserved for a *real, callable, tested operation* with observed benefit; they must never follow code inspection alone.
 
-## 7. Continuing protocol
+## 7. Architecture-aware AST audit (planned; not yet execution-verified)
 
-- The project lead chooses the next script and ordering. Following `tn.py` and `ncp.py`, the selected next module is `cfc.py`.
+- Enumerate all active Python files at one immutable repository revision. Record filenames, SHA and Python parser version.
+- For each actual file, run Python `ast.parse` on its complete source. Capture `PASS` or `FAIL`, syntax errors and line numbers; do not treat search, regex, partial excerpts or alternative-language parsers as Python AST success.
+- Build an inventory of definitions, imports, base classes, key call sites and cross-module dependencies, with file-and-line evidence. Distinguish static inference from confirmed runtime invocation.
+- Look specifically for TT/Tucker/fusion, NCP/CfC temporal feedback, digital-twin transitions, hashing/commitments, policy/governance and checkpoint verification. Trace unused yet intentional integration points such as `TreeTensorFusion` rather than discarding them as utilities.
+- Do not claim comprehensive coverage or successful execution until the audit results and environment are recorded. Preserve source and avoid speculative edits during the audit.
+
+## 8. Continuing protocol
+
+- The project lead chooses the sequence. After source review of `tn.py`, `ncp.py`, `cfc.py`, and `cognitive_lobe_runtime.py`, conduct the requested full-stack AST mapping before extending module claims. The mapping is **pending verified execution**; keyword scans and individual extracts are not a validated 27-file parse.
 - At each major finding, communicate what the code does, the technical implication, and a specific improvement—**during** the work, not only after it.
 - Keep a living register in `docs/CAPABILITY_REGISTER.md` with blockers, evidence, proposed integrations and explicit status.
 - An engineering agent may implement approved adapters using this protocol; it must not silently modify default-branch source, treat all hashes as signatures, process private chat streams without permission, or claim successful benchmarks without recorded output.
