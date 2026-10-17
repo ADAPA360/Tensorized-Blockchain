@@ -181,6 +181,49 @@ The project proposes a layered tensor-based systems architecture. Its **possible
 
 **Primary source:** [`tb_consensus.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_consensus.py).
 
+
+## 12. `tb_replay.py` — Deterministic verification and forensic replay
+
+**Role.** `ChainReplayer`, `replay_ledger`, and `verify_ledger_file` inspect persisted ledger linkage, transaction Merkle roots, sender sequences, receipt structure, consensus material and tensor commitments. When supplied a deterministic world-state factory, the module can additionally rerun governed state transitions and optionally compare lobe evidence.
+
+**Operational distinction.** A static hash check is not equivalent to reproducing a full twin simulation. The module explicitly supports static-only replay when a deterministic world-state/network factory is absent. Reports must record which phases were skipped; otherwise a passing hash-chain check could be overstated as behavioral reproducibility.
+
+**Dependencies, use and tests.** Python, JSON and stack-compatible ledger schemas; full replay adds `digital_twin_kernel.py`, `tb_execution.py` and optional NCP/CfC runtimes. A self-test and CLI are present. Evaluate replay from pinned genesis, deliberate transaction/state tampering, incompatible receipt schemes, deterministic seed and timestamp handling, and partial failure/rollback behavior. No independent execution outcome recorded yet.
+
+**Primary source:** [`tb_replay.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_replay.py).
+
+## 13. `tb_api.py` — Local orchestration API, not yet a public service
+
+**Role.** FastAPI endpoints expose twin creation, transaction creation/submission, mempool batching, execution, lobe analysis, block append, ledger summary and tensor compression. `TBApiRuntime` keeps a local in-process ledger and optional lobe runtime, using dynamic module loading. This is a convenient prototype and potential boundary for a future agent adapter.
+
+**Security distinction.** The source defaults to `require_signatures=False`, `verify_mempool_signatures=False` and `cors_origins=['*']`; `create_app` exposes state-changing endpoints without an apparent API-level authentication/authorization dependency. A transaction-creation request can carry a private key when signing is requested. `TBApiRuntime.execute` constructs `ExecutionConfig(verify_signature=False)`; `append_block` delegates to the ledger without constructing strict quorum certificates. **Do not expose these demo defaults to an untrusted network, users or production data.** The static source review is not a penetration test.
+
+**Integrity compatibility.** The local `hsh()` helper calls shared `tb_hashing.domain_hash(domain, obj)` using incompatible positional arguments and catches errors to fall back to local hashing. This is another reason to test common canonicalization across the API and ledger before changing wire formats.
+
+**Standalone use / next development.** Python/FastAPI/Pydantic and project components, with optional NumPy. For productization, add authenticated roles, restricted CORS, request size/volume limits, secure key custody, mandatory signature verification, explicit consensus gating, audit logging, privacy protection, and a separate signed and versioned agent/tool API. The current global `app` initialization may create local runtime/artifact side effects at import. No authenticated external deployment demonstrated.
+
+**Primary source:** [`tb_api.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_api.py).
+
+## 14. `tb_benchmarks.py` — Performance/compression experiment harness
+
+**Role.** Contains benchmark functions for TT decomposition and dense/TT matvec, twin state roots, NCP/CfC inference and ledger append/validation. It supports configurable quick/default/deep profiles, latency summaries, memory instrumentation, lazy module imports and JSON/CSV export. This is an instrument for the scientific white paper, **not** existing proof of speed, compression efficiency or learning quality.
+
+**Standalone use and dependencies.** Requires Python and NumPy, optionally importing stack modules for individual tests. Unavailable dependencies should be recorded distinctly from successful results. Tests described in source are not independently executed in this pass.
+
+**Recommended scientific protocol.** Pin source SHA, Python and NumPy, CPU/accelerator, precision, seed, workload structure, measured reconstruction error, cold/warm setup, total memory and end-to-end p50/p95 time. Compare *matched* dense and TT operators/accuracy, not unrelated randomly initialized models; report negative or slower cases. Separate inference performance from downstream task quality and actual online learning.
+
+**Primary source:** [`tb_benchmarks.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_benchmarks.py).
+
+## 15. `tb_open_source_audit.py` — Release hygiene and built-in AST checker
+
+**Role.** A largely stand-alone source/release audit for licenses, path leakage, likely secrets, Python syntax, dependency availability, optional test commands and reproducible demo probes, exporting Markdown and JSON. Notably, **`check_syntax` already uses Python `ast.parse`**. The new research-branch GitHub Actions AST check is an independent source-only CI run and leaves this existing audit implementation untouched.
+
+**Boundaries and standalone use.** Standard-library Python for most audit functions. Its optional test/demo execution involves subprocess commands only when expressly configured; these must be treated as security-sensitive execution gates with approved commands, no credentials and bounded duration. Passing a syntax/license scanner does not prove correctness, novelty or production safety.
+
+**Next experiments.** Compare the built-in `check_syntax` scan scope with the independent 28-file CI artifact; run in non-executing audit mode on the immutable source revision; test intentional secret/path/license fixtures without using genuine secrets; only then consider an integrated release gate.
+
+**Primary source:** [`tb_open_source_audit.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_open_source_audit.py).
+
 ## Complete-source AST audit — verified 17 October 2026
 
 A GitHub Actions check on research commit `6e52251fdc5ced99560b07a24a69cb983f542194` ran Python **3.12.3 `ast.parse` on 28/28 Python files**, including all 27 active core files and separately classified `app.py`: **zero parse failures**, approximately **37,433 source lines and 270,167 AST nodes**. The check records per-file source SHA-256, classes, top-level functions, local imports, static call sites and AST-node counts. [Audit run and retained artifact](https://github.com/ADAPA360/Tensorized-Blockchain/actions/runs/39018305393). AST success proves syntax parsing only; no imports, self-tests, benchmarks or operational interactions were executed.
@@ -189,7 +232,7 @@ A GitHub Actions check on research commit `6e52251fdc5ced99560b07a24a69cb983f542
 
 **Cross-stack interoperability candidate requiring tests:** `tb_hashing.domain_hash_hex(payload, *, domain=...)` requires a keyword-only domain, while some callers, including `tb_execution._object_hash` and `tb_api.hsh`, pass two positional arguments, catch the resulting exception and fall back to a locally different hash formulation. This can undermine cross-module canonical-hash consistency. Do **not** replace cryptographic formatting without a compatibility/migration design and golden-vector tests.
 
-**Review status:** Eleven module briefs now exist; the remaining scripts have completed syntax/structural inventory but have **not** each received a source-semantic or execution-level audit. Record exact evidence before assigning implementation, safety or scientific-priority claims.
+**Review status:** Fifteen module briefs now exist; the remaining scripts have completed syntax/structural inventory but have **not** each received a source-semantic or execution-level audit. Record exact evidence before assigning implementation, safety or scientific-priority claims.
 
 ## Cross-module architectural questions retained for full-stack review
 
