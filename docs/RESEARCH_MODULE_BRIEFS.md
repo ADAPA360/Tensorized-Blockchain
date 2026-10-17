@@ -224,6 +224,67 @@ The project proposes a layered tensor-based systems architecture. Its **possible
 
 **Primary source:** [`tb_open_source_audit.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_open_source_audit.py).
 
+
+## 16. `tb_config.py` — Shared runtime policy and resource envelopes
+
+**Role.** Standard-library-only configuration dataclasses for chain identity, deterministic runtime modes, tensor dtype/TT ranks, dense materialization guards, file access, lobe budgets, consensus policies and twin settings. `TensorizedBlockchainConfig` normalizes and validates cross-policy settings; `runtime_profile` distinguishes demo, test, production and replay labels. No direct neural or ledger execution.
+
+**Standalone use.** Python standard library; CLI and local self-tests are included but not run in this research pass. Other modules may also define their own configuration classes, so central policy is not automatically enforced end-to-end.
+
+**Key checks.** Some path allowlist checks in `FileSystemSafetyPolicy.is_path_allowed` compare resolved path strings using `startswith`, a potential path-prefix confusion to test against sibling directories. Test config round-trip equality, policy precedence across modules, deterministic replay flags, mismatch rejection and whether lobe budgets are actually enforced by the running system. Budget limits are governance targets, not allocated neural parameters.
+
+**Primary source:** [`tb_config.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_config.py).
+
+## 17. `tb_canonical.py` — Canonical representation for cryptographic state
+
+**Role.** Implements deterministic serialization policies for mapping keys, floats, bytes, dataclasses, NumPy arrays, schema envelopes, canonical hashes, Merkle trees and file digests. Configurable policies explicitly handle nonfinite floats, byte/array formats and unrecognized objects. Such canonicalization is necessary for cross-operator reproducibility and verifiable twin/ledger history, though not independently novel cryptography.
+
+**Standalone use.** Python standard library with NumPy optional for array-specific features; script contains CLI/self-tests. No semantic knowledge of tensors, twins or consensus.
+
+**Key checks.** Compare canonical byte vectors across dtype, endianness, negative zero, sets, Python versions and each consumer module. `tb_canonical.domain_hash(domain, payload)` and `tb_hashing.domain_hash(payload, *, domain=...)` deliberately have **different call signatures**, creating a high-priority adapter compatibility risk.
+
+**Primary source:** [`tb_canonical.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_canonical.py).
+
+## 18. `tb_hashing.py` — Domain-separated hashing and Merkle proof utilities
+
+**Role.** SHA-256 baseline with optional BLAKE3, explicit domain/tag framing, canonical object digests, Merkle inclusion proofs, hash manifests, and state-root helpers. `HashDigest`, `MerkleTree`, `merkle_root_hex`, `domain_hash_hex` and `verify_merkle_proof` provide reusable cryptographic primitives. These support integrity; they do not encrypt payload content or establish transaction authorization without verified signatures.
+
+**Standalone use.** Python standard library with optional canonical serializer, NumPy and BLAKE3; local self-test present. Domain framing and byte formats must be treated as protocol-critical for reproducible commitments.
+
+**Key checks.** Audit all positional/keyword call sites; reconcile fallback hash encodings across consumers; build immutable test vectors shared by `tb_canonical`, schema, ledger, lobe, API, consensus, storage and replay. Source-only AST cannot prove these hashes match.
+
+**Primary source:** [`tb_hashing.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_hashing.py).
+
+## 19. `tb_crypto.py` — Ed25519 identity and signature utilities
+
+**Role.** Generates/normalizes Ed25519 keys, signs canonical domain-separated payload preimages for transactions and validator votes, verifies signatures, emits public fingerprints and handles PEM/JSON key IO. The `cryptography` package is required to perform actual Ed25519 operations; HMAC is not accepted as a production signing substitute.
+
+**Standalone use.** The standard library supports interface/status handling; real signing requires external `cryptography`. Local CLI/self-tests exist, not independently run. Signing and signature verification authenticate data, but **do not provide 6G link encryption, secrecy, key agreement or forward secrecy**.
+
+**Compatibility risk.** The guarded import requests `tb_canonical.canonical_json_dumps` and `tb_canonical.json_safe`, names not exported by that module in the scanned revision; its grouped import therefore falls back to internal canonicalization. The analogous import of `tb_hashing.hash_payload` also targets a name not present in the shared hashing exports. Verify cryptographic preimage interoperability before fixing these imports, preserving legacy signature validity.
+
+**Primary source:** [`tb_crypto.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_crypto.py).
+
+## 20. `tb_storage.py` — Atomic persistence and artifact integrity
+
+**Role.** Root-constrained path handling, atomic writes, NPZ/JSON stores, sidecar manifests and digest-verified artifacts. Specialized stores cover ledger, block, tensor, lobe-checkpoint and demo outputs. These can support consistent research evidence and forensic reproduction if callers actually verify artifacts before use.
+
+**Standalone use.** Standard library, optional NumPy for NPZ and optional shared canonical/hash/config modules. Local self-test and status CLI exist; no end-to-end runtime verification recorded here.
+
+**Key checks.** Verify manifest and store-index hash roundtrips, interruption/partial-write scenarios, path traversal and symlink behavior, large artifacts, and consistent hash implementations. A stored file hash does not itself verify algorithm semantics or certify a model.
+
+**Primary source:** [`tb_storage.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_storage.py).
+
+## 21. `tb_security.py` — Security policies for deployment boundaries
+
+**Role.** Policy dataclasses and structured decisions for safe files, checkpoint integrity, tensor memory budgets, parameter caps, signatures, key-storage paths and use of external AI in consensus contexts. `check_consensus_runtime` prohibits external cortex, wall-clock randomness and nonapproved compute modes when consensus safety is required; `check_external_cortex_use` separates advisory AI output from committed decision material.
+
+**Standalone use.** Standard-library Python and optional shared config/canonical tools; source contains local policy tests and CLI. It is a policy library, not an access-control enforcement gateway until each deployment path actually calls it.
+
+**Key checks.** Audit where API, ledger, storage, checkpoint restore and execution operations invoke policy checks rather than merely declaring them. Test malformed paths, unexpected signature algorithms, secrets in logs, degraded dependencies, resource exhaustion and production-vs-demo mode separation. Regulatory and operational safety require system-level risk controls in addition to this module.
+
+**Primary source:** [`tb_security.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_security.py).
+
 ## Complete-source AST audit — verified 17 October 2026
 
 A GitHub Actions check on research commit `6e52251fdc5ced99560b07a24a69cb983f542194` ran Python **3.12.3 `ast.parse` on 28/28 Python files**, including all 27 active core files and separately classified `app.py`: **zero parse failures**, approximately **37,433 source lines and 270,167 AST nodes**. The check records per-file source SHA-256, classes, top-level functions, local imports, static call sites and AST-node counts. [Audit run and retained artifact](https://github.com/ADAPA360/Tensorized-Blockchain/actions/runs/39018305393). AST success proves syntax parsing only; no imports, self-tests, benchmarks or operational interactions were executed.
@@ -232,7 +293,7 @@ A GitHub Actions check on research commit `6e52251fdc5ced99560b07a24a69cb983f542
 
 **Cross-stack interoperability candidate requiring tests:** `tb_hashing.domain_hash_hex(payload, *, domain=...)` requires a keyword-only domain, while some callers, including `tb_execution._object_hash` and `tb_api.hsh`, pass two positional arguments, catch the resulting exception and fall back to a locally different hash formulation. This can undermine cross-module canonical-hash consistency. Do **not** replace cryptographic formatting without a compatibility/migration design and golden-vector tests.
 
-**Review status:** Fifteen module briefs now exist; the remaining scripts have completed syntax/structural inventory but have **not** each received a source-semantic or execution-level audit. Record exact evidence before assigning implementation, safety or scientific-priority claims.
+**Review status:** Twenty-one module briefs now exist; the remaining scripts have completed syntax/structural inventory but have **not** each received a source-semantic or execution-level audit. Record exact evidence before assigning implementation, safety or scientific-priority claims.
 
 ## Cross-module architectural questions retained for full-stack review
 
