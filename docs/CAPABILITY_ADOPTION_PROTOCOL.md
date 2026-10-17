@@ -4,7 +4,7 @@
 **Date:** 2026-10-17  
 **Scope:** `ADAPA360/Tensorized-Blockchain` and, when explicitly selected, related ADAPA360 module variants  
 **Owner of script sequence:** Human project lead; the assistant does not choose or silently advance to another module  
-**Source-reviewed modules:** `tn.py`, `ncp.py`, `cfc.py`, `cognitive_lobe_runtime.py`. **Current review:** architecture-aware full-stack AST inventory (not yet recorded as a passing 27-file parse).  
+**Source-reviewed modules:** `tn.py`, `ncp.py`, `cfc.py`, `cognitive_lobe_runtime.py`, `lobe_scaler.py`, `digital_twin_kernel.py`, `twin_anything.py`, and `tensorized_blockchain_kernel.py`. **AST status:** Python 3.12.3 successfully parsed all 28 `.py` files (27 core modules plus `app.py`) at research revision `6e52251fdc5ced99560b07a24a69cb983f542194`; zero syntax failures. [Evidence](https://github.com/ADAPA360/Tensorized-Blockchain/actions/runs/39018305393).  
 **Excluded from active integration:** `app.py`  
 **Purpose:** Measure whether repository components, offered as bounded **external computational tools**, make an LLM-assisted workflow more accurate, useful, reproducible or efficient. This does **not** alter the underlying LLM's weights, training, native memory, internal activations, or permissions.
 
@@ -20,7 +20,7 @@
 
 ## 2. Per-module adoption workflow
 
-Complete the following **eight gates**, keeping every gate in the capability register. Record `PASS`, `FAIL`, `BLOCKED`, or `NOT STARTED` with an evidence reference; `PASS` is never inferred from a narrative claim.
+Complete the following **eight gates**, recording every gate in the living research briefs or a future capability register. Record `PASS`, `FAIL`, `BLOCKED`, or `NOT STARTED` with an evidence reference; `PASS` is never inferred from a narrative claim.
 
 ### Gate A — Source and provenance
 - Record repository, path, branch, immutable commit/blob reference, license, date inspected, and variant relationship.
@@ -122,17 +122,17 @@ A module is **SOURCE INSPECTED** after A/B, **EXECUTABLE** after C, **BENCHMARKE
 
 The words **"capability added"** are reserved for a *real, callable, tested operation* with observed benefit; they must never follow code inspection alone.
 
-## 7. Architecture-aware AST audit (planned; not yet execution-verified)
+## 7. Architecture-aware AST audit (verified syntax pass)
 
 - Enumerate all active Python files at one immutable repository revision. Record filenames, SHA and Python parser version.
 - For each actual file, run Python `ast.parse` on its complete source. Capture `PASS` or `FAIL`, syntax errors and line numbers; do not treat search, regex, partial excerpts or alternative-language parsers as Python AST success.
 - Build an inventory of definitions, imports, base classes, key call sites and cross-module dependencies, with file-and-line evidence. Distinguish static inference from confirmed runtime invocation.
 - Look specifically for TT/Tucker/fusion, NCP/CfC temporal feedback, digital-twin transitions, hashing/commitments, policy/governance and checkpoint verification. Trace unused yet intentional integration points such as `TreeTensorFusion` rather than discarding them as utilities.
-- Do not claim comprehensive coverage or successful execution until the audit results and environment are recorded. Preserve source and avoid speculative edits during the audit.
+- **Observed:** GitHub Actions Python 3.12.3 parsed 28/28 files, zero errors, approximately 37,433 lines and 270,167 AST nodes. The reproducible source-only audit is in `.github/workflows/adapa360_ast_audit.yml`; log and JSON artifact are linked in the module briefs. This does **not** validate imports, runtime execution, feature usefulness, or scientific novelty. Preserve source and avoid speculative edits during the semantic review.
 
 ## 8. Continuing protocol
 
-- The project lead chooses the sequence. After source review of `tn.py`, `ncp.py`, `cfc.py`, and `cognitive_lobe_runtime.py`, conduct the requested full-stack AST mapping before extending module claims. The mapping is **pending verified execution**; keyword scans and individual extracts are not a validated 27-file parse.
+- The project lead chooses the sequence. After source review of `tn.py`, `ncp.py`, `cfc.py`, and `cognitive_lobe_runtime.py`, conduct the requested full-stack AST mapping before extending module claims. The Python AST parse has **passed**. Continue per-script semantic reviews and independent runtime gates; dynamic imports are not fully visible in the static module-import graph.
 - At each major finding, communicate what the code does, the technical implication, and a specific improvement—**during** the work, not only after it.
-- Keep a living register in `docs/CAPABILITY_REGISTER.md` with blockers, evidence, proposed integrations and explicit status.
+- Keep evidence, blockers, and implementation ideas in `docs/RESEARCH_MODULE_BRIEFS.md` until a separate register is justified; do not refer to a nonexistent register as completed.
 - An engineering agent may implement approved adapters using this protocol; it must not silently modify default-branch source, treat all hashes as signatures, process private chat streams without permission, or claim successful benchmarks without recorded output.
