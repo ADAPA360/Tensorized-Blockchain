@@ -28,7 +28,7 @@ ADAPA360's research programme is organized around **three interconnected but dis
 
 **Connections.** `ncp.py` can use TT recurrent weights; `cfc.py` can use a TT cell backbone; `digital_twin_kernel.py` uses tensor operators/fusion; `tensorized_blockchain_kernel.py` and `tb_tensor_commitments.py` consume tensor representations and their commitments. Higher layers should own governance, ledger execution, security and tool routing.
 
-**Research differentiation.** The proposed systems-level contribution is a shared tensor-computation interface with reproducible, verifiable *representation artifacts* across otherwise different AI and state-management modules. TT decomposition and tensorized neural networks are established prior art; this module alone does not establish a first-in-the-world invention.
+**Research differentiation.** The proposed contribution extends beyond operator compression: `TreeTensorFusion` (near line 1478 of the current source) encodes an **experimental two-level cognitive integration topology**, combining `memory`, `sensory`, and `tcfc_pred` through a first `TuckerFusionLayer`, then fusing that result with `vlm_strategy` at a root layer. `TuckerFusionLayer.train` includes a local gradient update, so fusion is not strictly inference-only. This is a fixed tree of factor-projection/Hadamard fusion layers, **not** a general hierarchical Tucker decomposition with arbitrary dimension trees or hierarchical-SVD rank truncation. Its architectural intent needs to be traced in other modules and must not be lost in a TT-focused assessment. TT and hierarchical fusion have earlier scientific precedents, so originality of this particular topology remains to be established.
 
 **Boundaries / next experiments.** Structure determines TT efficiency: random dense operators may not compress or execute faster. Core-byte commitments verify specific stored representations, not necessarily mathematically equivalent tensors in different gauges. Measure matched dense/TT accuracy, total memory, setup and inference latency on structured and unstructured cases; investigate clear representation-versus-operator identity semantics. **No measured in-chat capability gain is yet attributable to a deployed `tn.py` tool.**
 
@@ -74,4 +74,29 @@ The project proposes a layered tensor-based systems architecture. Its **possible
 
 **Engineering rule:** Preserve existing source, use reviewable changes on separate branches, and delay major rewrites until the complete module-by-module review clarifies authoritative cross-module interfaces. Prefer this **single living document** over one speculative new file per script. The project lead chooses the next script and its review order.
 
-**Next in the selected review sequence:** `cognitive_lobe_runtime.py` — module brief to be appended after its source-level investigation, rather than drafted from assumptions.
+## 4. `cognitive_lobe_runtime.py` — Dual-lobe coordinator and integration gap
+
+**Role.** A bridge between tensorized liquid neural networks and higher-level digital-twin, transaction and receipt contexts. It creates or accepts NCP and CfC lobes, converts context to numerical features, runs the two processors, returns hashes and health/transition receipts, and offers joint checkpoint operations. It is **not** itself a trainable fusion network, learned routing policy or independent governance engine.
+
+**Architecture and data path.** `CognitiveFeatureEncoder.encode` deterministically maps canonicalized twin snapshots, transaction records, commitments, policy receipts and optional metadata into a default **128-dimensional** numeric feature vector. This involves per-byte hash buckets and limited numeric slots with signed-log scaling, clipping and normalization. `encode_features(raw_vector=...)` also supports directly supplied numeric features. `CognitiveLobeRuntime.run` calls `run_ncp_pass` and `run_cfc_pass` with the **same feature vector**, then records two lobe results and a combined run hash. Neither lobe receives the other's output, hidden state or gradients. They are coordinated but **not dynamically coupled**. For architecture-level research, compare this path against `tn.py`'s currently separate `TreeTensorFusion` hierarchy rather than assuming it is connected.
+
+**Implemented interfaces.** `CognitiveLobeRuntimeConfig`, `FeatureEncoderConfig`, `CognitiveFeatureEncoder`, `DualLobeRunResult`, `LobePassResult`, `run`, `run_ncp_pass`, `run_cfc_pass`, `save_checkpoints`, `load_from_checkpoints`, `validate_consensus_safe`, and `run_self_test`. The API offers a cognitive analysis route through `tb_api.py` (`POST /lobes/analyze`); `tb_execution.py` separately accepts NCP/CfC lobe objects as optional execution inputs.
+
+**Dependencies and standalone use.** Python/NumPy; NCP/CfC module dependencies for both lobe paths; shared canonicalization, hashing and schema utilities for receipt creation with some fallback handling. `tn.py` enters transitively through the lobes when TT modes are enabled. Module self-tests exist in source; there is **no verified execution/benchmark artifact in this review**. State exists within the running Python instance, not automatically in a ChatGPT conversation.
+
+**Key caveats and next tests.** The hash-based encoder is **not a semantic embedding**; a changed payload hash influences per-byte bucket placement, potentially making semantically similar inputs quite different. `run_cfc_pass` can compare against an explicit `actual_state`, but the public `run` path does not provide independent ground truth: when it advances CfC, the resulting state is primarily a consistency check against the model's own calculation. Its receipt formatter looks for `relative_error` or `l2_error` while the native CfC `ForecastErrorReport` uses `relative_l2_error`; prioritize a field-semantics regression test. Health scores are heuristic and should not be labeled dynamical stability proofs. `save_checkpoints` writes both NPZ files and a hash manifest, but `load_from_checkpoints` does not visibly enforce verification of the **top-level** manifest before loading: test integrity and rollback in the integrated path. Controlled experiments should test semantic/typed feature encoders, explicit and bounded lobe-to-lobe fusion, accurate forecast observation alignment, and coordinated checkpoint verification.
+
+**Differentiation hypothesis.** The possible systems contribution is a traceable orchestration boundary that may eventually connect tensor-tree fusion, dual temporal processing and digital-twin governance. Current source demonstrates coordination, not demonstrated cognitive emergence or an advantage over simpler parallel models.
+
+**Primary source:** [`cognitive_lobe_runtime.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/cognitive_lobe_runtime.py).
+
+## Cross-module architectural questions retained for full-stack review
+
+- Does any runtime instantiate or invoke `TreeTensorFusion`? Identify the actual call paths rather than infer them from comments or class names.
+- Are numerical streams represented by stable, typed physical features or hashed serialized records? Measure both approaches.
+- Does the path for predicting a post-state receive later *independent observations* or only the model's own post-step state?
+- Are serialized state and tensor commitments checked in a single verifiable, canonical way end-to-end, including on restore?
+- Where should explicit lobe exchange and hierarchical sensor/memory/strategy fusion take place without bypassing governance?
+
+**Analysis technique:** repeat the **full-stack structural and Python-AST scan** with this architecture-first lens. A source/keyword inventory does not count as a successful `ast.parse` check. See the adoption protocol for what evidence is required before reporting AST or execution checks as passing.
+
