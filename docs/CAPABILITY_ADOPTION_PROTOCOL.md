@@ -4,7 +4,7 @@
 **Date:** 2026-10-17  
 **Scope:** `ADAPA360/Tensorized-Blockchain` and, when explicitly selected, related ADAPA360 module variants  
 **Owner of script sequence:** Human project lead; the assistant does not choose or silently advance to another module  
-**Source-reviewed modules:** `tn.py`, `ncp.py`, `cfc.py`, `cognitive_lobe_runtime.py`, `lobe_scaler.py`, `digital_twin_kernel.py`, `twin_anything.py`, and `tensorized_blockchain_kernel.py`. **AST status:** Python 3.12.3 successfully parsed all 28 `.py` files (27 core modules plus `app.py`) at research revision `6e52251fdc5ced99560b07a24a69cb983f542194`; zero syntax failures. [Evidence](https://github.com/ADAPA360/Tensorized-Blockchain/actions/runs/39018305393).  
+**Source-reviewed modules:** All 27 core `.py` scripts have a *first-pass source/architecture brief* in `docs/RESEARCH_MODULE_BRIEFS.md`; `app.py` remains excluded from active integration. This is not independent runtime verification. **AST status:** Python 3.12.3 successfully parsed all 28 `.py` files (27 core modules plus `app.py`) at research revision `6e52251fdc5ced99560b07a24a69cb983f542194`; zero syntax failures. [Evidence](https://github.com/ADAPA360/Tensorized-Blockchain/actions/runs/39018305393).  
 **Excluded from active integration:** `app.py`  
 **Purpose:** Measure whether repository components, offered as bounded **external computational tools**, make an LLM-assisted workflow more accurate, useful, reproducible or efficient. This does **not** alter the underlying LLM's weights, training, native memory, internal activations, or permissions.
 
@@ -132,7 +132,7 @@ The words **"capability added"** are reserved for a *real, callable, tested oper
 
 ## 8. Continuing protocol
 
-- The project lead chooses the sequence. After source review of `tn.py`, `ncp.py`, `cfc.py`, and `cognitive_lobe_runtime.py`, conduct the requested full-stack AST mapping before extending module claims. The Python AST parse has **passed**. Continue per-script semantic reviews and independent runtime gates; dynamic imports are not fully visible in the static module-import graph.
+- A complete Python 3.12.3 AST parse has **passed** for 28/28 files; first-pass semantic/architecture briefs now cover all 27 core modules. Full per-module mathematical analysis, prior-art checks and independent execution **remain pending**. Dynamic imports are not fully visible in the static import graph. Begin the next phase with controlled module self-tests, cryptographic golden-vector interoperability checks and exact call-graph validation; preserve the original source while collecting reproducible evidence.
 - At each major finding, communicate what the code does, the technical implication, and a specific improvement—**during** the work, not only after it.
 - Keep evidence, blockers, and implementation ideas in `docs/RESEARCH_MODULE_BRIEFS.md` until a separate register is justified; do not refer to a nonexistent register as completed.
 - An engineering agent may implement approved adapters using this protocol; it must not silently modify default-branch source, treat all hashes as signatures, process private chat streams without permission, or claim successful benchmarks without recorded output.
