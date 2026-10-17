@@ -6,6 +6,18 @@
 **Source reference:** default branch `initial-stack-upload`; verify the actual commit and blob SHA before executing or reproducing experiments.  
 **Scope:** This document grows **one reviewed module at a time** in the order chosen by the project lead. It is a compact repository companion to the eventual scientific white paper, **not** a replacement for the underlying code or a claim of scientific priority. Original source modules remain unchanged.
 
+## Project architecture: three complementary pillars
+
+ADAPA360's research programme is organized around **three interconnected but distinct pillars**. This is a proof-of-concept architecture, not yet a validated end-to-end product.
+
+1. **Tensor networks — mathematical construction substrate.** `tn.py` supplies reusable TT/MPO/Tucker representations, operators, contractions, factorization, and verifiable computational artifacts. Tensorization is proposed as a general construction approach, not merely a compression technique.
+2. **Liquid neural networks — temporal cognitive processing.** `ncp.py` and `cfc.py` provide complementary liquid-inspired recurrent state processing and time-aware state prediction. `cognitive_lobe_runtime.py` coordinates their inputs and outputs; actual inter-lobe learning and functional advantages remain to be demonstrated.
+3. **Blockchain with digital twinning — governed state and traceability.** `digital_twin_kernel.py`, `twin_anything.py`, and the ledger/transaction/consensus modules represent real or simulated entities and record controlled state transitions, receipts and cryptographic commitments. These features can support auditability but do not independently establish safety or legal compliance.
+
+**Integration hypothesis:** These pillars may jointly support a model-agnostic, inspectable computational framework. Each pillar should be assessed independently *and* at its interfaces. The white paper must explain both standalone applications and the added value, if any, of their combination.
+
+---
+
 ## 1. `tn.py` — Tensor-network computational substrate
 
 **Purpose and context.** The foundation for ADAPA360's tensorized AI experiments: CPU-first Tensor Train / matrix-product-operator (TT/MPO) transformations and Tucker-style fusion. The design intent is to reuse tensor-network operators as computational building blocks across cognitive, digital-twin and ledger systems, not only to reduce storage.
