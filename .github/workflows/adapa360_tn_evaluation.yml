@@ -1,0 +1,116 @@
+name: ADAPA360 tn.py isolated evaluation
+on:
+  push:
+    branches: [research/capability-adoption-protocol-20261017]
+    paths: [.github/workflows/adapa360_tn_evaluation.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-tn:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned numerical dependencies
+        run: python -m pip install --disable-pip-version-check numpy==1.26.4 scipy==1.13.1
+      - name: Execute source self-tests and independent checks
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, hashlib, sys, math, tempfile, pathlib, traceback
+          import numpy as np, scipy
+          import tn
+          results={}
+          def case(name, fn):
+              try:
+                  result=fn()
+                  results[name]={"ok":True,"detail":result}
+                  print("PASS",name,json.dumps(result,default=str))
+              except Exception as e:
+                  results[name]={"ok":False,"error":repr(e),"traceback":traceback.format_exc()[-2500:]}
+                  print("FAIL",name,repr(e))
+          case("source_self_tests",tn.run_self_tests)
+          def contraction():
+              rng=np.random.default_rng(734)
+              t=tn.TensorTrain([2,3,2],[2,2,2],bond_dims=[3,2],config=tn.TTConfig(seed=734,deterministic=True),rng=rng)
+              W=t.to_matrix(force_cpu=True)
+              X=rng.normal(size=(17,8)).astype(np.float32)
+              y=t.apply(X)
+              err=float(np.max(np.abs(y-(X@W.T))))
+              assert np.allclose(y,X@W.T,atol=1e-5,rtol=1e-5)
+              return {"max_abs_err":err,"parameters":t.parameter_count(),"dense_parameters":W.size}
+          case("independent_matvec",contraction)
+          def roundtrip():
+              rng=np.random.default_rng(32)
+              a=tn.TensorTrain([2,2,2],[2,2,2],bond_dims=[2,2],config=tn.TTConfig(seed=32,deterministic=True,consensus_safe=True))
+              with tempfile.TemporaryDirectory() as td:
+                  p=pathlib.Path(td)/'original.npz'
+                  a.save_npz(p)
+                  loaded=tn.TensorTrain.load_npz(p,verify=True)
+                  assert a.commitment().commitment_hash==loaded.commitment().commitment_hash
+                  d={k:np.array(v) for k,v in np.load(p,allow_pickle=False).items()}
+                  d["core_0"]=d["core_0"].copy()
+                  d["core_0"].flat[0]+=0.5
+                  altered=pathlib.Path(td)/'tampered.npz'
+                  np.savez(altered,**d)
+                  detected=False
+                  try: tn.TensorTrain.load_npz(altered,verify=True)
+                  except Exception: detected=True
+                  assert detected,"tamper not detected"
+              return {"commitment_equal":True,"tamper_detected":detected}
+          case("manifest_integrity_and_tamper",roundtrip)
+          def gauge():
+              a=tn.TensorTrain([2,2],[2,2],bond_dims=[2],config=tn.TTConfig(seed=9,deterministic=True))
+              cores=[np.array(c,copy=True) for c in a.cores_data]
+              cores[0]*=-1;cores[1]*=-1
+              b=tn.TensorTrain([2,2],[2,2],cores_data=cores,config=tn.TTConfig(seed=9,deterministic=True))
+              same=bool(np.allclose(a.to_matrix(),b.to_matrix(),rtol=1e-7,atol=1e-7))
+              changed=a.commitment().commitment_hash!=b.commitment().commitment_hash
+              assert same and changed
+              return {"same_operator":same,"different_representation_hash":changed}
+          case("gauge_sensitivity",gauge)
+          def tucker_gradient():
+              layer=tn.TuckerFusionLayer([2,2],3,rng=np.random.default_rng(4))
+              layer.factor_matrices=[np.array([[0.9,0.4,0.6],[0.8,0.7,0.3]],dtype=np.float32),np.array([[0.7,0.8,0.6],[0.4,0.9,0.5]],dtype=np.float32)]
+              xs=[np.array([1.0,0.7],dtype=np.float32),np.array([0.6,1.2],dtype=np.float32)]
+              grad=np.array([0.9,1.1,0.7],dtype=np.float32)
+              original=[m.copy() for m in layer.factor_matrices]
+              f=lambda x:float(np.dot(layer.contract([x,xs[1]]),grad))
+              eps=1e-3;finite=[]
+              for i in range(len(xs[0])):
+                  xp=xs[0].copy();xm=xs[0].copy();xp[i]+=eps;xm[i]-=eps
+                  finite.append((f(xp)-f(xm))/(2*eps))
+              back=layer.train(grad,xs,learning_rate=0.2,clip=0)
+              diff=float(np.max(np.abs(np.array(finite)-back[0])))
+              print("TUCKER_GRADIENT_DISCREPANCY",diff,"finite",finite,"returned",back[0].tolist())
+              return {"max_abs_input_grad_discrepancy":diff,"likely_in_place_update_effect":bool(diff>1e-3)}
+          case("tucker_input_gradient_diagnostic",tucker_gradient)
+          def tree_and_voxels():
+              t=tn.TreeTensorFusion([3,3,3],[3],4,rng=np.random.default_rng(10))
+              x={"memory":np.ones(3,dtype=np.float32),"sensory":np.ones(3,dtype=np.float32),"tcfc_pred":np.ones(3,dtype=np.float32),"vlm_strategy":np.ones(3,dtype=np.float32)}
+              y=t.contract(x)
+              assert y.shape==(4,)
+              d=tn.DendriticProcessor(1,2,patch_size=4,rng=np.random.default_rng(8))
+              v=d.process(np.zeros((4,4,4,1),dtype=np.float32))
+              assert v.shape==(16,)
+              return {"tree_fusion_dim":len(y),"voxel_feature_dim":len(v)}
+          case("tree_and_3d_processor_shapes",tree_and_voxels)
+          result={"source_commit":__import__('os').environ.get('GITHUB_SHA',''),"python":sys.version.split()[0],"numpy":np.__version__,"scipy":scipy.__version__,"tests":results}
+          pathlib.Path('/tmp/tn_evaluation.json').write_text(json.dumps(result,indent=2))
+          with open(__import__('os').environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write("# ADAPA360 tn.py source checks\n\n")
+              for k,v in results.items(): f.write(f"- {k}: {'PASS' if v['ok'] else 'FAIL'} {v.get('detail',v.get('error'))}\n")
+          if not all(v["ok"] for v in results.values()): raise SystemExit(1)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tn-evaluation-results
+          path: /tmp/tn_evaluation.json
+          if-no-files-found: warn
