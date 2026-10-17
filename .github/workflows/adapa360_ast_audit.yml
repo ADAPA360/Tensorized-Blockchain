@@ -1,0 +1,98 @@
+name: ADAPA360 source-only AST audit
+on:
+  push:
+    branches:
+      - research/capability-adoption-protocol-20261017
+    paths:
+      - .github/workflows/adapa360_ast_audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  parse-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python source AST inventory (no project imports)
+        shell: bash
+        run: |
+          python - <<'PY'
+          import ast, json, hashlib, sys
+          from collections import Counter
+          from pathlib import Path
+          root=Path.cwd()
+          paths=sorted(p for p in root.rglob('*.py') if not any(x in {'.git','.venv','venv','__pycache__'} for x in p.parts))
+          paths=[p for p in paths if '.github' not in p.parts]
+          names={p.stem for p in paths}
+          rows=[]
+          failures=[]
+          for p in paths:
+              raw=p.read_bytes()
+              name=p.relative_to(root).as_posix()
+              try:
+                  tree=ast.parse(raw,filename=name)
+              except (SyntaxError,UnicodeError,ValueError) as e:
+                  failures.append({'file':name,'line':getattr(e,'lineno',None),'error':str(e)})
+                  continue
+              topclasses=[n.name for n in tree.body if isinstance(n,ast.ClassDef)]
+              topfuncs=[n.name for n in tree.body if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef))]
+              imports={}
+              imported=set()
+              for n in ast.walk(tree):
+                  if isinstance(n,ast.Import):
+                      for a in n.names:
+                          base=a.name.split('.')[0]
+                          imports[a.asname or base]=base
+                          if base in names: imported.add(base)
+                  elif isinstance(n,ast.ImportFrom) and n.module:
+                      base=n.module.split('.')[0]
+                      if base in names: imported.add(base)
+                      for a in n.names:
+                          imports[a.asname or a.name]=base
+              callee_counts=Counter()
+              for n in ast.walk(tree):
+                  if not isinstance(n,ast.Call): continue
+                  f=n.func
+                  if isinstance(f,ast.Name): callee_counts[f.id]+=1
+                  elif isinstance(f,ast.Attribute):
+                      base=f.value.id if isinstance(f.value,ast.Name) else ''
+                      callee_counts[(base+'.' if base else '')+f.attr]+=1
+              tags={q:sum(q.lower() in k.lower() for k in list(callee_counts)+topclasses+topfuncs) for q in ['tucker','fusion','tensor','ncp','cfc','forecast','checkpoint','commit','hash','govern','learn','train']}
+              rows.append({
+                  'file':name,'sha256':hashlib.sha256(raw).hexdigest(),
+                  'lines':len(raw.splitlines()),'classes':topclasses,'functions':topfuncs,
+                  'project_imports':sorted(imported),'calls_to_project_modules':sorted(
+                       k for k in callee_counts if k.split('.')[0] in imports and imports[k.split('.')[0]] in names),
+                  'tags':{k:v for k,v in tags.items() if v},
+                  'ast_nodes':sum(1 for _ in ast.walk(tree))
+              })
+          result={'revision':__import__('os').environ.get('GITHUB_SHA',''),
+                  'python':sys.version.split()[0],
+                  'parsed':len(rows),'failed':len(failures),'files':len(paths),
+                  'failures':failures,'modules':rows}
+          Path('/tmp/adapa360_ast_report.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
+          print('AST_TOTAL',len(paths),'AST_PASS',len(rows),'AST_FAIL',len(failures),'PYTHON',result['python'])
+          for row in rows:
+              print('MODULE',row['file'],'LINES',row['lines'],'AST_NODES',row['ast_nodes'],
+                    'CLASSES',','.join(row['classes']),
+                    'IMPORTS',','.join(row['project_imports']))
+          for failure in failures: print('AST_FAILURE',failure)
+          print('AST_JSON='+json.dumps(result,separators=(',',':')))
+          with open(__import__('os').environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('# Python AST check\n\n')
+              f.write(f"Parsed {len(rows)}/{len(paths)} files with Python {result['python']}; {len(failures)} syntax failures.\n\n")
+              for row in rows:
+                  f.write(f"- \`{row['file']}\`: {len(row['classes'])} classes, {len(row['functions'])} top-level functions, project imports: {', '.join(row['project_imports']) or 'none'}\n")
+          if failures: raise SystemExit(1)
+          PY
+      - name: Preserve AST inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adapa360-ast-map
+          path: /tmp/adapa360_ast_report.json
+          if-no-files-found: warn
