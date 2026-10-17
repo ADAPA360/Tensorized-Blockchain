@@ -285,6 +285,67 @@ The project proposes a layered tensor-based systems architecture. Its **possible
 
 **Primary source:** [`tb_security.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_security.py).
 
+
+## 22. `tb_schemas.py` — Shared typed envelopes and receipt language
+
+**Role.** Standardized dataclass representations for chain identity, signed transaction envelopes, action/policy/transition receipts, twin creation, tensor/compression commitments, consensus votes/certificates, NCP health, CfC transitions and lobe scaling. `SchemaMixin` handles serialization, canonical hashes and simple validation. It deliberately does not execute ledger or neural logic.
+
+**Standalone use.** Mainly Python standard library, with optional NumPy/canonical/hash integration. Source includes a registry and roundtrip self-tests but independent runtime verification remains pending.
+
+**Cross-layer risk.** Schema classes are not the only protocol types: `tensorized_blockchain_kernel.py`, `digital_twin_kernel.py`, `ncp.py`, `cfc.py` and `tb_config.py` define related local types with sometimes different fields and hash domains. The module's guarded `_tb_domain_hash_hex(domain, payload, ...)` calls also use the wrong positional convention for the current `tb_hashing.domain_hash_hex` API and can fall back to different framing. Establish canonical wire-level schemas and migration-tested golden vectors before declaring interoperability.
+
+**Primary source:** [`tb_schemas.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_schemas.py).
+
+## 23. `tb_validation.py` — Schema and cross-object invariant checks
+
+**Role.** `ValidationReport` and typed functions check transaction shape and optional signatures, tensor commitments, policy receipts, consensus certificates, topology reachability, ledger linkage, replay/duplicate transactions and sender sequences. They accept dataclasses and mappings and provide structured errors for potential CI and agent adapters.
+
+**Standalone use.** Standard-library Python with optional shared schema/hash/crypto modules. Import-safe by design and includes a self-test, not independently run in this pass. `validate_loaded_ledger` may additionally invoke a ledger's own `validate_chain` method.
+
+**Critical checks.** Verify that required cryptographic checks actually fail closed when backends are unavailable; align Merkle domain conventions with the ledger kernel and track whether the generic validator is operating on legacy versus current schema objects. The generic validator's fallback logic, including `_domain_hash`, must be tested against the keyword-only `tb_hashing` signatures. Validation success is not proof that a physical action was safe or that a forecast was accurate.
+
+**Primary source:** [`tb_validation.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_validation.py).
+
+## 24. `tb_observability.py` — Traceable diagnostics and health summaries
+
+**Role.** `DiagnosticEvent`, `DiagnosticCollector`, `StructuredLogger`, `RuntimeHealthReport` and `DemoTrace` provide standardized diagnostics, JSON log formatting, warning aggregation, dependency status and runtime-mode summaries. It can be used around tensor, lobe, twin and ledger operations without importing the heavy runtime at module import.
+
+**Standalone use.** Python standard library and optional helper modules; status and self-tests are available in source. Health reports are measurements/diagnostics, not formal stability or availability proofs.
+
+**Next tests.** Trace a single simulated incident end-to-end from sensor/twin observation through NCP/CfC, policy, transaction, consensus and replay. Require correlation IDs, synchronized and deterministic timestamps where appropriate, redacted secrets/personal information, honest degraded-mode reporting and measurable false alarm rates.
+
+**Primary source:** [`tb_observability.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_observability.py).
+
+## 25. `tb_cli.py` — Command-line orchestration interface
+
+**Role.** A local JSON-first interface for initialization, twin creation, transaction submission, demos, chain validation, artifact inspection/export and self-tests. It dynamically imports the relevant modules rather than implementing ledger, cryptography or tensor algebra itself.
+
+**Standalone use.** Standard-library CLI scaffold, with actual command behavior dependent on the available project modules and installed dependencies. `cmd_run_self_tests` and other commands can execute module code and write artifacts, so they belong in an isolated and explicitly configured test environment.
+
+**Engineering use.** A potential stable interface for coding agents and research reproducibility, after defining input/output schemas, version pinning, exit-code semantics, bounded resource use, irreversible-action protections and fixture-only credentials. CLI availability alone does not confer autonomous capabilities on ChatGPT.
+
+**Primary source:** [`tb_cli.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_cli.py).
+
+## 26. `tb_demo_scenarios.py` — Deterministic cross-sector research fixtures
+
+**Role.** Generates reproducible scenarios for an Alicante fire department, an industrial-machine digital product passport and an LK20 curriculum twin, including structured telemetry/events, actor and validator identities, signed demo transaction envelopes and optional twin materialization. These scenarios support sector-specific demonstrations rather than asserting independent field deployment.
+
+**Standalone use.** Primarily Python standard library, optionally `cryptography` and helper modules. `generate_demo_keypair` produces deterministic **predictable** keys, suitable only for test fixtures, never operational security. Source includes CLI and self-tests; their outcomes are not independently verified here.
+
+**Scientific opportunity.** Use the scenarios as the first public, pinned datasets for verifying tensor compression, state transitions, forecasting alignment, governance refusals, signature checks and replay consistency. For EU emergency-services relevance, add synthetic sensor outages, operator override, escalation pathways, uncertainty and false-alarm consequences.
+
+**Primary source:** [`tb_demo_scenarios.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_demo_scenarios.py).
+
+## 27. `tb_mempool.py` — Pre-ledger transaction sequencing and replay protection
+
+**Role.** `TransactionMempool` accepts schema-versioned transactions, optionally verifies Ed25519 signatures, rejects duplicate hashes/IDs and replayed sender sequences, holds future sequences pending predecessors, and selects bounded deterministic batches. Snapshots and restore functions persist local queue state. It does not execute twin actions, create blocks or validate consensus.
+
+**Standalone use.** Python standard library, with optional schema, crypto, validation, canonical and hash integrations; self-test covers future-sequence queuing, duplicate detection, batch ordering and snapshot roundtrip, but is not independently rerun here.
+
+**Boundary tests.** Check signature-required and verification defaults across API/CLI/ledger, sequence identity consistency when changing sender IDs/public keys, replay after restore, saturation, network ordering and transaction eviction policies. Its `_domain_hash` helper attempts positional calls to the shared hashing API, then catches exceptions and uses local framing; require golden-vector alignment. A secure consensus chain needs uniform treatment from mempool admission to execution and block validation.
+
+**Primary source:** [`tb_mempool.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_mempool.py).
+
 ## Complete-source AST audit — verified 17 October 2026
 
 A GitHub Actions check on research commit `6e52251fdc5ced99560b07a24a69cb983f542194` ran Python **3.12.3 `ast.parse` on 28/28 Python files**, including all 27 active core files and separately classified `app.py`: **zero parse failures**, approximately **37,433 source lines and 270,167 AST nodes**. The check records per-file source SHA-256, classes, top-level functions, local imports, static call sites and AST-node counts. [Audit run and retained artifact](https://github.com/ADAPA360/Tensorized-Blockchain/actions/runs/39018305393). AST success proves syntax parsing only; no imports, self-tests, benchmarks or operational interactions were executed.
@@ -293,7 +354,7 @@ A GitHub Actions check on research commit `6e52251fdc5ced99560b07a24a69cb983f542
 
 **Cross-stack interoperability candidate requiring tests:** `tb_hashing.domain_hash_hex(payload, *, domain=...)` requires a keyword-only domain, while some callers, including `tb_execution._object_hash` and `tb_api.hsh`, pass two positional arguments, catch the resulting exception and fall back to a locally different hash formulation. This can undermine cross-module canonical-hash consistency. Do **not** replace cryptographic formatting without a compatibility/migration design and golden-vector tests.
 
-**Review status:** Twenty-one module briefs now exist; the remaining scripts have completed syntax/structural inventory but have **not** each received a source-semantic or execution-level audit. Record exact evidence before assigning implementation, safety or scientific-priority claims.
+**Review status:** Source-level briefs now cover all **27 core Python scripts** and the syntax/structural inventory includes `app.py` (28/28 parsed). These are first-pass code-structure and integration assessments, **not** 27 successful runtime tests, formal mathematical proofs or complete one-page scientific dossiers. Deeper mathematical analysis, independent experiments, benchmarks and prior-art comparisons remain required.
 
 ## Cross-module architectural questions retained for full-stack review
 
