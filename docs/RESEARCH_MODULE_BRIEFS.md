@@ -146,6 +146,41 @@ The project proposes a layered tensor-based systems architecture. Its **possible
 
 **Primary source:** [`tensorized_blockchain_kernel.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tensorized_blockchain_kernel.py).
 
+
+## 9. `tb_tensor_commitments.py` — Tensor/ledger artifact bridge
+
+**Role.** Converts `tn.py` tensor cores and rounding reports into schema-aware commitments, NPZ artifact integrity reports, and links to block hashes and digital-twin state roots. `hash_tensor_core` commits each array's index, shape, dtype, order, byte length and raw SHA-256 under domain separation; `round_tensor_train_with_commitment` binds pre/post rounding representations and compression reports. It does **not** execute actions, run a blockchain, or perform tensor numerical computations itself.
+
+**Standalone use.** Python/NumPy and a `tn.py`-compatible TensorTrain are necessary for actual tensor artifacts; shared schema/canonical/hash layers have guarded import fallbacks. Source contains CLI/self-tests but these have not been run independently. The integrity API is suitable for a future bounded verification tool.
+
+**Differentiation and checks.** The proposed systems contribution is verifiable continuity from mathematical tensor data to governed state-transition evidence. Hashes verify *exact stored representations*, not tensor gauge-equivalence, source authenticity or confidentiality. Test corruption, endian/dtype normalization, manifest tampering, cross-platform recomputation, and compatibility with the ledger's independently compiled tensor-core commitments.
+
+**Primary source:** [`tb_tensor_commitments.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_tensor_commitments.py).
+
+## 10. `tb_execution.py` — Canonical governed transaction-execution boundary
+
+**Role and boundaries.** `CanonicalTransactionExecutor.execute` validates a transaction envelope and expected pre-state root, applies one or more actions through `AkkuratInterface.governed_actions` (unless explicitly configured for direct fallback), and emits pre/post state commitments, action/policy/transaction/transition receipts and optional lobe evidence. This file deliberately does not append blocks or own consensus; the ledger should consume its outputs.
+
+**Neural integration.** `run_ncp_lobe_receipt` advances an NCP lobe using `deterministic_feature_vector` and records health. `run_cfc_transition_receipt` requests a CfC internal-state forecast and commits a transition receipt. However the code calls `compare_forecast_actual(predicted_state, predicted_state, ...)`: comparing an internal prediction with itself does **not** validate actual predictive accuracy. Furthermore the CfC `predicted_post_state_hash` is derived from a neural hidden-state vector while `actual_post_state_hash` is populated with the digital twin's `post_root`; these are **different state spaces**. The receipt needs explicit typed target semantics and a true observed, aligned target before comparative claims.
+
+**Hash interoperability.** `_object_hash` calls `tb_hashing.domain_hash_hex(domain, obj)` positionally, despite the shared function's signature requiring `domain` as a keyword-only argument. The exception is swallowed and a different local hash encoding is used. This is a source-level compatibility risk affecting receipt consistency, not yet an independently executed failure case. A golden-vector test must precede changes to protocol hashes.
+
+**Standalone use and improvement.** Python/NumPy and a network/control plane object are required for meaningful execution; shared schemas and low-level hashing/validation are optional imports with fallback. A self-test uses `digital_twin_kernel.py`, without independent results here. Prioritize a typed forecast-to-observation pipeline, invariant tests for rejected actions and pre-state mismatch, recovery after partial failures, and agreement between execution receipts and consensus/ledger schemas.
+
+**Primary source:** [`tb_execution.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_execution.py).
+
+## 11. `tb_consensus.py` — Signed transition quorum and validator workflow
+
+**Role.** A separate transition-based consensus implementation. `TransitionProposal` binds chain ID, height/round, block hash, transaction Merkle root, pre/post digital-twin roots, policy receipt root and tensor commitment hash. `TransitionConsensusEngine` creates/verifies Ed25519 validator votes, checks known validators and duplicates, sums weighted approvals, and issues/verifies certificates; `TransitionCoherenceValidator` checks proposed transition consistency.
+
+**Standalone use and boundaries.** Source calls shared `tb_canonical`, `tb_hashing`, `tb_crypto`, `tb_schemas` and `tb_validation`. It is a decision/certificate engine, not a network transport layer, ledger append routine or neural inference path. Source includes a self-test with demo validators, quorum-failure and tamper tests, but these are not independently run in this research pass.
+
+**Critical integration distinction.** `ConsensusConfig` defaults to requiring signatures, but `require_tensor_commitment_match=False` and `require_transition_receipt=False` by default; policy/tensor validation behavior therefore depends on configuration and the provided objects. `tensorized_blockchain_kernel.py` also defines *different, locally owned* vote/certificate structures and allows default empty certificates on append. A scientifically defensible protocol needs a single authoritative consensus schema and verified, fail-closed linkage from the execution result to a signed quorum and then to an appended block.
+
+**Potential applications and limits.** Verifiable distributed approval could be useful for multi-agency asset-state changes, controlled robot operations and audit trails. This does not establish a deployed distributed consensus network, a secure communications encryption scheme, or safety certification.
+
+**Primary source:** [`tb_consensus.py`](https://github.com/ADAPA360/Tensorized-Blockchain/blob/initial-stack-upload/tb_consensus.py).
+
 ## Complete-source AST audit — verified 17 October 2026
 
 A GitHub Actions check on research commit `6e52251fdc5ced99560b07a24a69cb983f542194` ran Python **3.12.3 `ast.parse` on 28/28 Python files**, including all 27 active core files and separately classified `app.py`: **zero parse failures**, approximately **37,433 source lines and 270,167 AST nodes**. The check records per-file source SHA-256, classes, top-level functions, local imports, static call sites and AST-node counts. [Audit run and retained artifact](https://github.com/ADAPA360/Tensorized-Blockchain/actions/runs/39018305393). AST success proves syntax parsing only; no imports, self-tests, benchmarks or operational interactions were executed.
@@ -154,7 +189,7 @@ A GitHub Actions check on research commit `6e52251fdc5ced99560b07a24a69cb983f542
 
 **Cross-stack interoperability candidate requiring tests:** `tb_hashing.domain_hash_hex(payload, *, domain=...)` requires a keyword-only domain, while some callers, including `tb_execution._object_hash` and `tb_api.hsh`, pass two positional arguments, catch the resulting exception and fall back to a locally different hash formulation. This can undermine cross-module canonical-hash consistency. Do **not** replace cryptographic formatting without a compatibility/migration design and golden-vector tests.
 
-**Review status:** Eight module briefs now exist; the remaining scripts have completed syntax/structural inventory but have **not** each received a source-semantic or execution-level audit. Record exact evidence before assigning implementation, safety or scientific-priority claims.
+**Review status:** Eleven module briefs now exist; the remaining scripts have completed syntax/structural inventory but have **not** each received a source-semantic or execution-level audit. Record exact evidence before assigning implementation, safety or scientific-priority claims.
 
 ## Cross-module architectural questions retained for full-stack review
 
