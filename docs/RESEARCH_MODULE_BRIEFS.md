@@ -1,4 +1,4 @@
-# ADAPA360 Research Module Briefs — Living White-Paper Notes
+# ADAPA360 Research Module Briefs — Living White-Paper Notes.
 
 **Research status:** source-reviewed proof-of-concept modules; no independent production validation  
 **Version:** 0.2 — 17 October 2026  
